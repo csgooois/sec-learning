@@ -1,0 +1,27 @@
+学习Linux的命令，目前学到时间日期，自学课程为b站韩顺平Linux课程
+以下是部分关键命令
+------------------------------------------------------------------------
+看自己在哪	pwd
+列目录（详细+可读+隐藏）	ls -alh
+回上一级 / 回家 / 回上一次目录	cd .. / cd ~ / cd -
+建多级目录 / 删空目录 / 删一切	mkdir -p / rmdir / rm -rf
+建空文件 / 批量建	touch a.txt / touch f{1..10}.txt
+拷文件 / 拷目录 / 强制覆盖	cp / cp -r / \cp -r
+移动 / 改名	mv old new
+看文件（小/中/大）	cat -n / more / less
+覆盖写 / 追加写	> / >>
+看开头 / 结尾 / 实时追踪	head -n 5 / tail -n 5 / tail -f
+软链接 / 硬链接	ln -s 源 链接名 / ln 源 链接名
+历史命令 / 执行第 N 条	history 10 / !N / Ctrl+R
+日期格式化	date "+%Y-%m-%d %H:%M:%S"
+日历	cal 2026 / cal 9 2026
+建用户 / 指定家目录 / 指定组	useradd / -d / -g
+设密码 / 锁定账号	passwd user / passwd -l user
+删用户（留/删家目录）	userdel / userdel -r
+建组 / 删组 / 改主组 / 加附组	groupadd / groupdel / usermod -g / usermod -aG
+查身份 / 查组	id user / whoami / who am i
+切换用户（一定要带 -）	su - root / exit
+看 / 设默认运行级别	systemctl get-default / set-default multi-user.target
+关机 / 重启 / 同步磁盘	shutdown -h now / reboot / sync
+查手册 / 查内建命令	man cmd / help cmd / type cmd
+------------------------------------------------------------------------
