@@ -1,0 +1,152 @@
+之前已经学过计算机网络，但之前仅是浅显的学习，并不精通，此笔记用来学习部分对于网安重要的计算机网络知识点
+---------------------------------------------------------------------------
+1. OSI and TCP/IP
+OSI分为七层 “物数网传会表应” 
+即物理层，数据链路层，网络层，传输层，会话层，表示层，应用层。该顺序从下往上
+TCP/IP仅四层
+网络接口层，网际层，传输层，应用层。同样从下往上。
+数据单位的话：
+应用层：报文/消息
+传输层：段(TCP)/数据报(UDP)
+网络层：包/分组
+数据链路层：帧
+物理层：比特
+---------------------------------------------------------------------------
+2. IP地址与子网
+对于IPV4点分十进制，子网掩码，网络位/主机位，CIDR我均已十分熟悉便不再说明
+对于私有网络有
+10.0.0.0/8
+172.16.0.0/12
+192.168.0.0/16
+以上三个私有网络均不在公网出现，仅作为私有内部使用
+当然还有一些其他特殊IP
+127.0.0.0/8      回环地址，本机
+169.254.0.0/16   链路本地地址，DHCP 失败时常见
+0.0.0.0/0        默认路由
+224.0.0.0/4      组播
+255.255.255.255  受限广播
+对于NAT 网络地址转换
+就是让自己的私有网络通过少量的公网IP来访问公网
+
+计算一个子网作为例子 如192.168.1.130/26
+/26 -> 掩码 255.255.255.192 -> 最后一段块大小 = 256 - 192 = 64
+网段按 64 递增： 0-63 | 64-127 | 128-191 | 192-255
+130 落在 128-191 这一段，所以：
+  网络地址   192.168.1.128    （本段第一个）
+  广播地址   192.168.1.191    （本段最后一个）
+  可用主机   192.168.1.129 ~ 192.168.1.190，共 62 个
+  可用主机数 = 2^(32-26) - 2 = 62
+--------------------------------------------------------------------------
+3. MAC and ARP
+MAC地址格式 = 物理地址/硬件地址 工作在数据链路层
+48位6字节 6组十六进制如下
+00:1A:2B:3C:4D:5E
+00-1A-2B-3C-4D-5E
+常见特殊 MAC：
+FF:FF:FF:FF:FF:FF	广播地址
+01:00:5E:xx:xx:xx	IPv4 组播映射
+33:33:xx:xx:xx:xx	IPv6 组播映射
+MAC地址的特点：
+全球唯一（理论上）
+烧录在网卡上
+用于同一局域网内寻址
+不能跨路由器直接寻址
+
+ARP 即地址解析协议 address resolution protocol
+用于将IP转变为MAC地址，即已知同一局域网内某个IP 求出它的MAC地址
+假设：
+
+PC1：192.168.1.10，MAC：AA:AA:AA:AA:AA:AA
+PC2：192.168.1.20，MAC：BB:BB:BB:BB:BB:BB
+
+PC1 想发数据给 PC2：
+    PC1 查 ARP 缓存，看有没有 192.168.1.20 对应的 MAC。
+    如果没有，PC1 广播 ARP 请求：
+
+谁是 192.168.1.20？
+请告诉 192.168.1.10，MAC 是 AA:AA:AA:AA:AA:AA
+
+目的 MAC 是广播：
+FF:FF:FF:FF:FF:FF
+
+同一局域网所有设备都收到，但只有 PC2 发现：
+    这是我的 IP。
+
+PC2 单播回复：
+    192.168.1.20 的 MAC 是 BB:BB:BB:BB:BB:BB
+    PC1 把结果写入 ARP 缓存，然后封装以太网帧发送。
+跨网段怎么办？
+
+如果 PC1 发现目标 IP 不在同一网段：
+
+PC1：192.168.1.10/24
+    目标：8.8.8.8
+
+PC1 不会 ARP 查询 8.8.8.8，而是 ARP 查询 网关 IP：
+    谁是 192.168.1.1？
+
+然后把帧发给网关 MAC，由路由器继续转发。
+
+所以：
+同网段：ARP 目标 IP，得到目标 MAC
+跨网段：ARP 网关 IP，得到网关 MAC
+
+交换机负责同一广播域内按 MAC 转发；
+路由器负责跨广播域按 IP 转发。
+------------------------------------------------------------------
+部分与计网有关的指令
+命令                        作用                           主要干什么
+ip a	            查看所有网络接口和IP      wlan0 / wlp* 的 inet 192.168.x.x/24
+ip r	            查看路由表	            default via 192.168.1.1 dev wlan0
+ping -c 4 8.8.8.8	测试到公网 IP 的连通性	是否 0% packet loss
+traceroute 8.8.8.8	追踪到目标经过的路由跳	第一跳通常是网关
+arp -a	            查看 ARP 缓存	        网关 IP 对应的 MAC
+ip neigh	        查看邻居表，替代 arp -a	同网段 IP-MAC 映射
+可以在Linux上逐个试验一下
+当ip a会输出如下这段
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host
+       valid_lft forever preferred_lft forever
+
+2: wlan0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    link/ether aa:bb:cc:dd:ee:ff brd ff:ff:ff:ff:ff:ff
+    inet 192.168.1.23/24 brd 192.168.1.255 scope global dynamic noprefixroute wlan0
+       valid_lft 3600sec preferred_lft 3600sec
+
+第一行是接口基本信息：
+2:	                                接口编号
+wlan0	                            接口名，无线网卡常见 wlan0 / wlp*
+<BROADCAST,MULTICAST,UP,LOWER_UP>	接口能力/状态标志
+mtu 1500	                        最大传输单元，以太网常见 1500
+qdisc noqueue	                    队列规则
+state UP	                        接口已启用
+group default	                    接口组
+qlen 1000	                        队列长度
+第二行是链路层的地址
+link/ether	以太网 MAC 地址；    aa:bb:cc:dd:ee:ff	    本接口 MAC；    brd ff:ff:ff:ff:ff:ff	链路层广播地址。
+第三行是IPV4地址
+inet代表IPV4地址，/24代表子网掩码，brd x.x.x.255代表广播地址，scope global代表全局作用域，dynamic代表IP动态获取一般是DHCP，noprefixroute不自动加前缀路由，NetworkManager 常见，wlan0是绑定接口
+第四行是IPv6地址
+scope host 代表仅在本机
+最后一行是有效期
+valid_lft	地址有效剩余时间，preferred_lft	首选剩余时间，forever	永久，回环常见
+ip r会输出如下：
+default via 192.168.1.1 dev wlan0 proto dhcp src 192.168.1.23 metric 600
+192.168.1.0/24 dev wlan0 proto kernel scope link src 192.168.1.23 metric 600
+第一行为默认路由：
+default	            默认路由
+via 192.168.1.1	    默认网关
+dev wlan0	        出口网卡
+proto dhcp	        由 DHCP 下发
+src 192.168.1.23	源 IP
+metric 600	        优先级，越小越优先
+第二行是直接网段路由：
+192.168.1.0/24	    本机所在网段
+dev wlan0	        从 wlan0 出去
+proto kernel	    内核自动生成
+scope link	        链路范围，直连
+src 192.168.1.23	源 IP
+---------------------------------------------------------------------
