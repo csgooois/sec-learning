@@ -1,0 +1,111 @@
+# 基础定位
+ip.addr == 192.168.1.10          # 与该 IP 相关的所有包（源或目的）
+tcp.port == 80                   # 80 端口（源或目的）
+tcp.srcport == 8080              # 只看源端口
+dns / http / tls / arp / icmp    # 按协议过滤
+
+# 握手与连接状态
+tcp.flags.syn == 1 && tcp.flags.ack == 0   # 三次握手第一个包
+tcp.flags.reset == 1             # RST：端口关闭或被拒绝
+tcp.flags.fin == 1               # FIN：正常关闭
+tcp.analysis.retransmission      # 重传：丢包或网络拥塞
+tcp.analysis.flags               # 让 Wireshark 自己标出异常包（排查首选）
+
+# HTTP
+http.request.method == "POST"    # 只看 POST
+http.response.code >= 400        # 只看错误响应
+http contains "password"         # 明文传输的敏感词（这就是要用 HTTPS 的原因）
+http.cookie                      # 看 Cookie 怎么传的
+
+# TLS
+tls.handshake.type == 1          # ClientHello
+tls.handshake.type == 11         # Certificate（服务端下发证书）
+tls.handshake.extensions_server_name   # SNI：明文暴露你访问哪个域名
+
+# 组合与排除
+ip.src == 192.168.1.10 && tcp.flags.syn == 1 && !(tcp.flags.ack == 1)
+!(arp || dns)                    # 排除噪声，只看业务流量
+
+以下均为AI生成：
+逐层点开并抄录以下字段：
+① Frame（物理层/数据链路层帧）
+字段	含义	你应记录
+Frame Number	帧序号	第几个包
+Frame Length	帧总长度（字节）	如 74 bytes
+Capture Time	捕获时间	相对时间或绝对时间
+
+② Ethernet II（数据链路层）
+字段	含义	你应记录
+Destination	目的 MAC 地址	如网关或服务器的 MAC
+Source	源 MAC 地址	你本机网卡的 MAC
+Type	上层协议类型	0x0800 表示 IPv4
+
+③ Internet Protocol Version 4（网络层）
+字段	含义	你应记录
+Version	IP 版本	4
+Header Length	首部长度	通常 20 bytes
+Time to Live	TTL	见下方说明
+Source Address	源 IP	你的 IP
+Destination Address	目的 IP	example.com 的 IP
+
+TTL 判断目标操作系统：TTL 每经过一个路由器减 1，初始值通常为：
+
+    Linux / Unix：64
+
+    Windows：128
+
+    网络设备（路由器/交换机）：255
+
+你收到的包的 TTL 值可以粗略反推目标系统：
+
+    TTL ≈ 64 → 目标可能是 Linux
+
+    TTL ≈ 128 → 目标可能是 Windows
+
+    TTL ≈ 255 → 目标可能是网络设备
+
+例如，如果抓到的响应包 TTL 是 52，52 < 64，说明经过了 12 跳（64 - 52 = 12）到达你这里，目标大概率是 Linux。
+④ Transmission Control Protocol（传输层）
+字段	含义	你应记录
+Source Port	源端口	你的临时端口（如 54321）
+Destination Port	目的端口	80
+Sequence Number	序列号 seq	相对序列号
+Acknowledgment Number	确认号 ack	仅在 ACK 标志置位时有效
+Flags	标志位	展开看 SYN/ACK/FIN 等
+Window	窗口大小	接收窗口
+⑤ Hypertext Transfer Protocol（应用层）
+字段	含义	你应记录
+Request Method	请求方法	GET
+Request URI	请求路径	/
+Request Version	HTTP 版本	HTTP/1.1
+Host	目标主机	example.com
+其他 Header	各请求头	User-Agent、Accept 等
+四、Follow TCP Stream 看完整会话
+
+在选中的 HTTP 包上右键 → Follow → TCP Stream（或按 Ctrl+Alt+Shift+T）。
+
+弹出的窗口会显示这次 TCP 连接的完整内容：
+
+    红色文字：客户端发给服务器的数据（请求）
+
+    蓝色文字：服务器发给客户端的数据（响应）
+
+你可以看到：
+text
+
+GET / HTTP/1.1
+Host: example.com
+User-Agent: curl/...
+Accept: */*
+
+HTTP/1.1 200 OK
+Content-Type: text/html
+...
+
+<!doctype html>
+...
+
+关闭窗口时选 Back 可以恢复之前的显示过滤器。
+
+
+此方面过于复杂，建议直接查看视频或者询问AI
