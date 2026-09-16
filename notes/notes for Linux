@@ -49,3 +49,46 @@ xm 三条都不占，所以 "Operation not permitted"。
 updatedb          # 手动更新索引库（需要 root）
 locate newfile.txt
 ----------------------------------------------------------------------------
+你写了一个脚本并加了 crontab，但任务就是不执行。请列出至少 4 个排查方向。
+
+    脚本没有执行权限 → chmod u+x /root/backup.sh，或者写成 sh /root/backup.sh。
+    cron 里的环境变量很少，PATH 与你登录时不同，命令可能找不到 → 脚本里全部写绝对路径（如 /usr/bin/date、/bin/tar），或在脚本开头显式 source /etc/profile。用 which date 查绝对路径。
+    表达式写错（分钟位漏写 0 等）→ crontab -l 复核。
+    服务没启动 → systemctl status crond，不是 active 就 start 并 enable。
+    命令里的 % 需要转义：crontab 中 % 表示换行，写 date +%Y%m%d 必须写成 date +\%Y\%m\%d（否则任务会被截断）。
+    看日志确认是否被调度：tail -f /var/log/cron。
+----------------------------------------------------------------------------
+写出下列"统计类"指令：① 统计 /home 下文件的个数；② 统计 /home 下目录的个数；③ 递归统计（含子目录）；④ 以树状结构显示 /home 目录。
+
+ls -l  /home | grep "^-" | wc -l      # ① 文件数（^- 匹配普通文件行）
+ls -l  /home | grep "^d" | wc -l      # ② 目录数（^d 匹配目录行）
+ls -lR /home | grep "^-" | wc -l      # ③ 递归统计（-R 递归）
+ls -lR /home | grep "^d" | wc -l
+
+tree /home                            # ④ 树状显示（默认可能没装）
+yum install -y tree                   # 安装
+-----------------------------------------------------------------------------
+又一部分Linux命令
+
+按名/按用户/按大小找文件	find 路径 -name "*.txt" / -user xm / -size +100M
+找到后再处理	find ... -exec ls -lh {} \; 或 find ... | xargs ls -lh
+快速按名查（先更新库）	updatedb → locate 文件名
+在文件内容里搜	grep -n "关键字" 文件；-i 忽略大小写 -v 反向 -r 递归
+压缩单文件（不保留原文件）	gzip 文件 / gunzip 文件.gz
+压目录（保留原文件）	zip -r 包.zip 目录 / unzip -d 目标 包.zip
+打包压（最常用）	tar -zcvf 包.tar.gz 源 / tar -zxvf 包.tar.gz -C 目录
+只看包内容不解压	tar -ztvf 包.tar.gz
+看权限	ls -l / ls -ahl / ls -ld 目录
+改权限（数字/符号）	chmod 755 文件 / chmod u+x,g-w,o= 文件
+改所有者 / 改组	chown 用户 文件 / chgrp 组 文件（递归加 -R）
+定时任务	crontab -e / -l / -r；服务 systemctl restart crond
+一次性任务	at now + 5 minutes → Ctrl+D；atq 查看 atrm N 删除
+看磁盘整体/某目录	df -h / du -h --max-depth=1 目录 / du -sh 目录
+统计文件/目录个数	ls -l 目录 | grep "^-" | wc -l（目录用 "^d"）
+分区/格式化/挂载	fdisk /dev/sdb → mkfs -t ext4 /dev/sdb1 → mount
+永久挂载	写 /etc/fstab（用 UUID）→ mount -a 验证
+看 IP / 测连通	ip addr（或 ifconfig） / ping 目标
+改静态 IP	改 ifcfg-ens33 → systemctl restart network
+改主机名	hostnamectl set-hostname 新名
+主机名映射	/etc/hosts：IP 主机名（优先级高于 DNS）
+--------------------------------------------------------------------------------
