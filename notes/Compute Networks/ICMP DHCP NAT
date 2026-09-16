@@ -1,0 +1,35 @@
+1. ICMP
+ICMP = Internet Control Message Protocol，互联网控制报文协议。
+工作在网络层
+作用：传递控制信息、差错报告，不传输用户数据。
+类型	名称	        用途
+0	  Echo Reply	  ping 回复
+3	  Destination   Unreachable	目标不可达
+8	  Echo Request	ping 请求
+11	Time Exceeded	TTL 超时，traceroute 用
+5	  Redirect	    重定向
+
+Linux 默认用 UDP，Windows 用 ICMP。
+
+2.DHCP
+DHCP = Dynamic Host Configuration Protocol，动态主机配置协议。
+工作在应用层
+作用：自动分配 IP、子网掩码、网关、DNS。
+
+DORA过程
+以下是从第一步到最后一步的过程
+Discover	客户端广播	        谁是DHCP 服务器？
+Offer	    服务器单播/广播	  我可以给你这个 IP
+Request	  客户端广播	        我要这个 IP
+Ack	      服务器单播/广播	  确认，租约生效
+
+DHCP 分配的 IP 有租期，到期要续租。
+续租时客户端直接单播请求，不广播。
+续租失败会重新走 DORA。
+
+3.常见网络设备区别
+设备	  工作层	        转发依据	  隔离冲突域	隔离广播域
+集线器	  物理层	        电信号	    否	      否
+交换机	  数据链路层	    MAC 表	  是	      默认否
+路由器	  网络层	        IP 路由表	是	      是
+防火墙	  传输层/应用层	安全策略	  是	      是
