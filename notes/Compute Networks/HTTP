@@ -1,0 +1,236 @@
+之前对HTTP这些没有过多了解，仅仅是只知道它的名字，这篇记录我学习HTTP的过程
+
+1.方法
+使用http://example.com/user/123这个网址来举例
+GET/POST/PUT/DELETE/HEAD/OPTIONS/PATCH
+| 方法      | 核心含义       | 常见用途            |
+| ------- | --------         | --------------- |
+| GET     | 获取             | 查询数据            |
+| POST    | 创建 / 提交      | 新增资源、提交数据       |
+| PUT     | 整体替换         | 完整更新资源          |
+| DELETE  | 删除             | 删除资源            |
+| HEAD    | 只获取响应头     | 检查资源是否存在、大小、缓存等 |
+| OPTIONS | 询问支持什么操作 | CORS、能力探测       |
+| PATCH   | 局部修改         | 修改资源的一部分        |
+(1)GET
+GET就是向服务器申请获取资源
+向服务器发送以下:
+GET /users/123 HTTP/1.1
+Host: example.com
+服务器可能返回:
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+    "id": 123,
+    "name": "Alice",
+    "age": 20
+}
+也就是说:
+GET /users/123
+        ↓
+“把 123 号用户的信息给我”
+
+GET通常把参数放在URL中
+GET 一般用于获取数据，而不是修改数据。
+正常情况下不会导致用户信息发生改变。
+这就是所谓的 safe（安全）方法。
+safe并不是绝对安全，只是调用它本身不会产生资源状态修改。
+
+
+(2)POST
+POST就是向服务器提交一些数据
+例如注册就是POST:
+    POST /users HTTP/1.1
+    Host: example.com
+    Content-Type: application/json
+    
+    {
+        "name": "Alice",
+        "age": 20
+    }
+服务器收到后就可能返回:
+    HTTP/1.1 201 Created
+    Content-Type: application/json
+    
+    {
+        "id": 123,
+        "name": "Alice",
+        "age": 20
+    }
+POST经常用于以下事情:
+    提交表单
+    登录
+    搜索复杂条件
+    执行某种服务器端操作
+    上传文件
+    创建资源
+(3) PUT
+PUT是把这个资源整体替换一下
+假如你有这么一个用户:
+    {
+        "id": 123,
+        "name": "Alice",
+        "age": 20,
+        "email": "alice@example.com"
+    }
+你现在想更新这个用户:
+    PUT /users/123 HTTP/1.1
+    Content-Type: application/json
+    
+    {
+        "name": "Bob",
+        "age": 25,
+        "email": "bob@example.com"
+    }
+(4)PATCH
+PATCH同于PUT
+但PUT用于整体替换而PATCH仅用于修改一部分
+所以PATCH很适合以下操作:
+    修改头像
+    修改昵称
+    修改年龄
+    修改状态
+    修改密码
+(5)DELETE
+删除资源
+(6)HEAD
+HEAD和GET很像但不返回响应体
+GET请求发送后服务器返回响应头和响应体
+但HEAD请求只返回响应头
+HEAD可以让你向服务器询问这个文件存在吗，这样你就不用下载文件了
+(7)OPTIONS
+这是用于让你询问服务器，这个资源都支持什么方法
+例如:
+    OPTIONS /users/123 HTTP/1.1
+    Host: example.com
+可能返回:
+    HTTP/1.1 204 No Content
+    Allow: GET, PUT, PATCH, DELETE, OPTIONS
+意思是:
+    这个资源支持：
+        GET
+        PUT
+        PATCH
+        DELETE
+        OPTIONS
+
+对于GET vs POST(!!!):
+GET 和 POST 的核心区别不是“安全”，而是语义和参数位置。GET 用于获取资源表示，是 safe、幂等、默认可缓存的，参数通常在 URL query；
+POST 用于提交数据给目标资源处理，通常用于创建或触发动作，非 safe、非幂等，参数通常在 body。
+所谓安全，HTTP 里的 safe 指只读语义，不是加密；传输安全要靠 HTTPS。GET 参数放 URL 会进入日志、历史、Referer，这是暴露面问题，不是 GET 本身不加密。
+
+---------------------------------------------------------
+
+请求结构：请求行（方法 路径 版本）、请求头、空行、请求体
+这里比较简单，不在过多赘述，可自行询问AI
+
+---------------------------------------------------------
+
+## 请求头：按用途理解，不要死背
+
+### 1. 请求本身
+- Host：访问哪个主机
+- User-Agent：客户端是什么
+- Referer：从哪个页面发起
+- Accept：希望得到什么格式的响应
+
+### 2. 身份与会话
+- Cookie：携带 Cookie / 会话信息
+- Authorization：携带认证凭证
+安全重点：
+- 凭证能否泄露？
+- 能否伪造？
+- 服务器是否正确校验？
+- 修改后能否访问不属于自己的资源？
+
+### 3. 数据格式
+- Content-Type：Body 是什么格式，服务器应该如何解析
+- Content-Length：Body 有多长
+安全重点：
+- 后端到底按什么格式解析？
+- 不同 Content-Type 是否走不同解析逻辑？
+- 不同解析器之间是否存在差异？
+
+### 4. 来源与跨域
+- Origin：请求来源的 Origin
+- Referer：发起请求的页面
+安全重点：
+- CORS
+- CSRF
+- Origin / Referer 校验
+注意：Origin 和 Referer 不是同一个东西，也不能单独把它们当成可靠身份认证。
+
+### 5. 缓存
+- Cache-Control
+- ETag
+- If-None-Match
+- If-Modified-Since
+重点：
+- 浏览器 / 代理是否可以使用缓存？
+- 资源是否发生变化？
+
+### 6. 代理链与客户端 IP
+- X-Forwarded-For
+- X-Real-IP
+安全重点：
+- 后端是否信任这些 Header？
+- 请求是否经过可信反向代理？
+- IP 白名单 / 黑名单是否可能被绕过？
+
+--------------------------------------------------------------
+
+状态码总结如下
+
+2xx —— 成功
+200 → 成功
+204 → 成功，但没有响应体
+
+3xx —— 重定向 / 缓存
+301 → 永久重定向
+302 → 临时重定向
+307 → 临时重定向，保留原方法
+304 → 没变化，使用缓存
+
+4xx —— 请求 / 访问有问题
+400 → 请求本身有问题
+401 → 认证没通过 / 缺少有效认证
+403 → 服务器拒绝访问
+404 → 找不到资源
+405 → 方法不允许
+418 → 茶壶彩蛋
+
+5xx —— 服务器处理出现问题
+500 → 服务器内部错误
+502 → 网关与上游通信/响应有问题
+503 → 服务暂时不可用
+
+-------------------------------------------------------------
+
+响应头：Set-Cookie（含属性）、Location、Content-Type、Server、X-Powered-By（信息泄露）
+
+Set-Cookie
+是服务器要求浏览器保存一个Cookie，下次请求时自动带上
+Cookie属性尤其重要 
+HTTpOnly
+意思是JavaScript不能通过document.cookie读取Cookie
+secure
+意思是这个cookie只能通过HTTPs发送
+Samesite
+它主要与跨站请求时 Cookie 是否发送有关
+
+Location
+是告诉客户端去哪里，浏览器根据Location跳转
+
+Content-Type
+表示服务器返回的数据是什么格式的
+
+Server
+是表示服务器表明"我是什么服务器"
+
+X-Powered-By
+是表明"我是什么技术栈"
+
+--------------------------------------------------------------
+
+实操：curl -v -X POST -H "Content-Type: application/json" -d '{"a":1}' http://靶机/；用 -i 看响应头、-L 跟随重定向、-k 忽略证书
