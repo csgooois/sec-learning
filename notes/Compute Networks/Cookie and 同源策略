@@ -1,0 +1,50 @@
+HTTP 本身不记得你上一次是谁，但网站可以通过 Cookie + Session 让服务器识别你，从而维持登录状态。
+
+Cookie是服务器通过发送Set-Cookie命令浏览器携带Cookie，服务器本身并不携带和保存Cookie
+Session是服务器保存上下文交流会话信息等，通过浏览器携带的Cookie认出用户的
+
+1. Session ID 不是密码
+Session ID 是一种身份凭证。如果被别人窃取，在会话仍然有效的情况下，可能被用于冒充用户。
+因此，实际网站通常会使用 HTTPS，并通过 Secure、HttpOnly、SameSite 等 Cookie 属性降低风险。
+
+2. Session 会过期
+服务器可以设置会话超时时间，也可以在用户退出登录时使 Session 失效。
+即使浏览器还保存着 Cookie，如果服务器上的 Session 已经失效，用户也可能需要重新登录。
+
+3. 并不是所有网站都使用 Session
+有些网站使用 JWT 等 Token 方案，浏览器保存 Token，服务器通过验证 Token 来识别用户，不一定需要传统的服务器端 Session 存储。
+
+Set-Cookie同样包含许多信息
+Set-Cookie 是服务器告诉浏览器如何设置 Cookie 的响应头。 Cookie 保存之后，浏览器会根据它的属性决定是否、何时、向哪些请求发送。
+
+Expires      指定过期时间
+MAX-Age      指定存活多长时间
+Domain        限定主机范围
+Path          限定请求路径
+secure        仅通过安全连接发送(Htpps)
+HttpOnly      普通JS读不到Cookie
+Samsite        限制跨站携带cookie
+
+同源策略（Same-Origin Policy，SOP）是浏览器的一条安全规则，用来限制一个“源”的网页脚本访问另一个“源”的资源或数据。
+一个URL的‘源’是由三个部分决定
+即 协议 域名 断口 三者都一样才同源
+如以下两个同源
+https://example.com/page1
+https://example.com/page2
+Sop并不限制跨域请求
+浏览器通常允许网页发出某些跨源请求，但会限制网页脚本读取跨源响应中的敏感数据。
+SOP 主要限制网页脚本对跨源数据的读取和访问。
+
+CORS = Cross-Origin Resource Sharing（跨源资源共享）
+有两个响应头Access-Control-Allow-Origin / Allow-Credentials
+SOP 默认限制跨源读取；CORS 是服务器通过 HTTP 响应头告诉浏览器：“这个来源可以读取我的响应”。
+服务器可能返回:
+    Access-Control-Allow-Origin: https://www.example.com
+意思是:来自 https://www.example.com 的网页，可以读取这个响应。
+Allow-credentials:
+浏览器可以在符合条件的跨源请求中携带凭据，并把响应暴露给前端 JavaScript。
+
+Access-Control-Allow-Origin: https://app.example
+Access-Control-Allow-Credentials: true
+第一个回答：谁可以读取？
+第二个回答：允许这个跨源请求涉及凭据时，把响应交给前端。
