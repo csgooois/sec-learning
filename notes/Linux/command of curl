@@ -1,0 +1,23 @@
+curl -v http://target/              # -v 显示完整请求/响应头（排错必备）
+curl -i http://target/              # -i 只显示响应头 + 正文
+curl -I http://target/              # -I 只发 HEAD，只看响应头
+curl -L http://target/              # -L 跟随 301/302 重定向
+curl -k https://target/             # -k 忽略证书校验（自签名站点）
+
+# 发数据
+curl -X POST -d "user=admin&pass=123" http://target/login      # 表单（默认 x-www-form-urlencoded）
+curl -X POST -H "Content-Type: application/json" -d '{"a":1}' http://target/api
+curl -X PUT --data-binary @file.txt http://target/upload
+
+# 改请求头 / Cookie / UA
+curl -H "X-Forwarded-For: 127.0.0.1" http://target/   # 伪造来源 IP（测 IP 校验绕过）
+curl -H "Cookie: PHPSESSID=abc; security=low" http://target/
+curl -A "Mozilla/5.0" http://target/                  # 改 User-Agent
+curl -e "http://evil.com" http://target/              # 改 Referer
+
+# 走代理（配合 Burp 看脚本/命令发了什么包）
+curl -x http://127.0.0.1:8080 http://target/          # 挂 Burp
+curl -x http://127.0.0.1:8080 -k https://target/      # HTTPS 走代理要加 -k
+
+# 计时（时间盲注判断延迟就靠它）
+curl -o /dev/null -s -w "code:%{http_code} time:%{time_total}\n" http://target/
